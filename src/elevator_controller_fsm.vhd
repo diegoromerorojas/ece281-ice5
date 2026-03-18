@@ -95,8 +95,21 @@ begin
 	-- CONCURRENT STATEMENTS ------------------------------------------------------------------------------
 	
 	-- Next State Logic
-  
+            f_Q_next <= s_floor2 when (i_up_down = '1' AND f_Q = s_floor1 AND i_reset = '0') else -- going up
+                        s_floor3 when (i_up_down = '1' AND f_Q = s_floor2 AND i_reset = '0') else
+                        s_floor4 when (i_up_down = '1' AND (f_Q = s_floor3 or f_Q = s_floor4) AND i_reset = '0') else
+            
+                        s_floor3 when (i_up_down = '0' AND f_Q = s_floor4 AND i_reset = '0') else-- going down
+                        s_floor2 when (i_up_down = '0' AND f_Q = s_floor3 AND i_reset = '0') else
+                        s_floor1 when (i_up_down = '0' AND (f_Q = s_floor2 or f_Q = s_floor1) AND i_reset = '0') else
+                        s_floor2 when (i_reset = '1'); -- default case
 	-- Output logic
+        with f_Q select
+            o_floor <=  "0001" when s_floor1,
+                        "0010" when s_floor2,
+                        "0011" when s_floor3,
+                        "0100" when s_floor4,
+                        "0001" when others; -- default is floor1
 
 	-------------------------------------------------------------------------------------------------------
 	
@@ -104,7 +117,17 @@ begin
 	
 	-- State register ------------
 	
-	
+	-- state memory w/ synchronous reset ---------------
+	register_proc : process (i_clk, i_stop)
+	begin		
+        if (rising_edge(i_clk)) then
+        
+            if i_stop = '1' then -- stay on floor --
+               f_Q <= f_Q;
+            else f_Q <= f_Q_next; -- go to next floor --
+            end if;          
+        end if;
+	end process register_proc;
 	-------------------------------------------------------------------------------------------------------
 	
 	
